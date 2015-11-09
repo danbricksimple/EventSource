@@ -28,6 +28,7 @@ static NSString *const ESEventRetryKey = @"retry";
 }
 
 @property (nonatomic, strong) NSURL *eventURL;
+@property (nonatomic, strong) NSString *authToken;
 @property (nonatomic, strong) NSURLConnection *eventSource;
 @property (nonatomic, strong) NSMutableDictionary *listeners;
 @property (nonatomic, assign) NSTimeInterval timeoutInterval;
@@ -40,22 +41,22 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @implementation EventSource
 
-+ (id)eventSourceWithURL:(NSURL *)URL
++ (id)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue
 {
-    return [[EventSource alloc] initWithURL:URL];
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue];
 }
 
-+ (id)eventSourceWithURL:(NSURL *)URL timeoutInterval:(NSTimeInterval)timeoutInterval
++ (id)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval
 {
-    return [[EventSource alloc] initWithURL:URL timeoutInterval:timeoutInterval];
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:timeoutInterval];
 }
 
-- (id)initWithURL:(NSURL *)URL
+- (id)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue
 {
-    return [self initWithURL:URL timeoutInterval:ES_DEFAULT_TIMEOUT];
+    return [self initWithURL:URL withAuth:authValue timeoutInterval:ES_DEFAULT_TIMEOUT];
 }
 
-- (id)initWithURL:(NSURL *)URL timeoutInterval:(NSTimeInterval)timeoutInterval
+- (id)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval
 {
     self = [super init];
     if (self) {
@@ -63,6 +64,7 @@ static NSString *const ESEventRetryKey = @"retry";
         _eventURL = URL;
         _timeoutInterval = timeoutInterval;
         _retryInterval = ES_RETRY_INTERVAL;
+        _authToken = authValue;
         
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
         dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
@@ -100,6 +102,8 @@ static NSString *const ESEventRetryKey = @"retry";
 {
     wasClosed = NO;
     NSMutableURLRequest *request = [NSMutableURLRequest requestWithURL:self.eventURL cachePolicy:NSURLRequestReloadIgnoringCacheData timeoutInterval:self.timeoutInterval];
+    [request setValue:self.authToken forHTTPHeaderField:@"Authorization"];
+    
     if (self.lastEventID) {
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
