@@ -14,6 +14,9 @@ typedef enum {
     kEventStateClosed = 2,
 } EventState;
 
+// How's it going gang?
+
+
 // ---------------------------------------------------------------------------------------------------------------------
 
 /// Describes an Event received from an EventSource
