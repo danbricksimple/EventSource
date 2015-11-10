@@ -87,6 +87,9 @@ typedef void (^EventSourceEventHandler)(Event *event);
 /// Closes the connection to the EventSource.
 - (void)close;
 
+/// Opens the connection to the EventSource.
+- (void)open;
+
 @end
 
 // ---------------------------------------------------------------------------------------------------------------------
