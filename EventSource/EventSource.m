@@ -107,7 +107,11 @@ static NSString *const ESEventRetryKey = @"retry";
     if (self.lastEventID) {
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
-    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:YES];
+    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+    
+    [self.eventSource scheduleInRunLoop:[NSRunLoop mainRunLoop]
+                          forMode:NSDefaultRunLoopMode];
+    [self.eventSource start];
 }
 
 - (void)close
