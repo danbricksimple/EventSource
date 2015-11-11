@@ -66,12 +66,16 @@ static NSString *const ESEventRetryKey = @"retry";
         _retryInterval = ES_RETRY_INTERVAL;
         _authToken = authValue;
         
-//        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
-//        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
-//            [self open];
-//        });
+        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
+        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+            [self open];
+        });
     }
     return self;
+}
+
+- (void)dealloc {
+    NSLog(@"EventSource object removed");
 }
 
 - (void)addEventListener:(NSString *)eventName handler:(EventSourceEventHandler)handler
@@ -108,10 +112,10 @@ static NSString *const ESEventRetryKey = @"retry";
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
     
-    dispatch_async(dispatch_get_main_queue(), ^{
-        self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
-        [self.eventSource start];
-    });
+//    dispatch_async(dispatch_get_main_queue(), ^{
+//        self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+//        [self.eventSource start];
+//    });
     
 //    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
 //    
