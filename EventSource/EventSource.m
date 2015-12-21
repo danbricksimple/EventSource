@@ -112,16 +112,16 @@ static NSString *const ESEventRetryKey = @"retry";
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
     
-//    dispatch_async(dispatch_get_main_queue(), ^{
-//        self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
-//        [self.eventSource start];
-//    });
+    dispatch_async(dispatch_get_main_queue(), ^{
+        self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+        [self.eventSource start];
+    });
     
-//    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
-//    
-//    [self.eventSource scheduleInRunLoop:[NSRunLoop mainRunLoop]
-//                          forMode:NSDefaultRunLoopMode];
-//    [self.eventSource start];
+    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+    
+    [self.eventSource scheduleInRunLoop:[NSRunLoop mainRunLoop]
+                          forMode:NSDefaultRunLoopMode];
+    [self.eventSource start];
 }
 
 - (void)close
