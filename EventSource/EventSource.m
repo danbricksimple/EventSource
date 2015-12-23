@@ -116,12 +116,6 @@ static NSString *const ESEventRetryKey = @"retry";
         self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
         [self.eventSource start];
     });
-    
-    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
-    
-    [self.eventSource scheduleInRunLoop:[NSRunLoop mainRunLoop]
-                          forMode:NSDefaultRunLoopMode];
-    [self.eventSource start];
 }
 
 - (void)close
