@@ -41,27 +41,44 @@ typedef void (^EventSourceEventHandler)(Event *event);
 /// Connect to and receive Server-Sent Events (SSEs).
 @interface EventSource : NSObject
 
-/// Returns a new instance of EventSource with the specified URL.
+/// Returns a new instance of EventSource with the specified URL and auth token.
 ///
 /// @param URL The URL of the EventSource.
-/// @param timeoutInterval The request timeout interval in seconds. See <tt>NSURLRequest</tt> for more details. Default: 5 minutes.
+/// @param authValue The auth token value to use for the event request
 + (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue;
 
-/// Returns a new instance of EventSource with the specified URL.
-///
-/// @param URL The URL of the EventSource.
-+ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval ;
+/*!
+ *  Returns a new instance of EventSource with the specified URL, auth token, and retry interval
+ *
+ *  @param URL           The URL of the EventSource.
+ *  @param authValue     The auth token value to use for the event request
+ *  @param retryInterval The interval at which the library should attempt to reconnect
+ */
++ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue retryInterval:(NSTimeInterval)retryInterval;
 
-/// Creates a new instance of EventSource with the specified URL.
-///
-/// @param URL The URL of the EventSource.
-- (instancetype)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue;
-
-/// Creates a new instance of EventSource with the specified URL.
+/// Returns a new instance of EventSource with the specified URL auth token, and timeout interval.
 ///
 /// @param URL The URL of the EventSource.
 /// @param timeoutInterval The request timeout interval in seconds. See <tt>NSURLRequest</tt> for more details. Default: 5 minutes.
-- (instancetype)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval;
++ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval ;
+
+/*!
+ *  Returns a new instance of EventSource with the specified URL auth token, timeout interval, and retry interval.
+ *
+ *  @param URL             The URL of the EventSource.
+ *  @param authValue       The auth token value to use for the event request
+ *  @param timeoutInterval The request timeout interval in seconds. See <tt>NSURLRequest</tt> for more details. Default: 5 minutes.
+ *  @param retryInterval   The interval at which the library should attempt to reconnect
+ */
++ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval retryInterval:(NSTimeInterval)retryInterval;
+
+/// Creates a new instance of EventSource with the specified URL.
+///
+/// @param URL              The URL of the EventSource.
+/// @param authValue        The auth token value to use for the event request
+/// @param timeoutInterval  The request timeout interval in seconds. See <tt>NSURLRequest</tt> for more details. Default: 5 minutes.
+/// @param retryInterval    The interval at which the library should attempt to reconnect
+- (instancetype)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval retryInterval:(NSTimeInterval)retryInterval;
 
 /// Registers an event handler for the Message event.
 ///

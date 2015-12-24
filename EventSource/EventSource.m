@@ -41,29 +41,34 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @implementation EventSource
 
-+ (id)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue
++ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue
 {
-    return [[EventSource alloc] initWithURL:URL withAuth:authValue];
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:ES_DEFAULT_TIMEOUT retryInterval:ES_RETRY_INTERVAL];
 }
 
-+ (id)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval
++ (instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval
 {
-    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:timeoutInterval];
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:timeoutInterval retryInterval:ES_RETRY_INTERVAL];
 }
 
-- (id)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue
++(instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue retryInterval:(NSTimeInterval)retryInterval
 {
-    return [self initWithURL:URL withAuth:authValue timeoutInterval:ES_DEFAULT_TIMEOUT];
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:ES_DEFAULT_TIMEOUT retryInterval:retryInterval];
 }
 
-- (id)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval
++(instancetype)eventSourceWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval retryInterval:(NSTimeInterval)retryInterval
+{
+    return [[EventSource alloc] initWithURL:URL withAuth:authValue timeoutInterval:timeoutInterval retryInterval:retryInterval];
+}
+
+- (instancetype)initWithURL:(NSURL *)URL withAuth:(NSString *)authValue timeoutInterval:(NSTimeInterval)timeoutInterval retryInterval:(NSTimeInterval)retryInterval
 {
     self = [super init];
     if (self) {
         _listeners = [NSMutableDictionary dictionary];
         _eventURL = URL;
         _timeoutInterval = timeoutInterval;
-        _retryInterval = ES_RETRY_INTERVAL;
+        _retryInterval = retryInterval;
         _authToken = authValue;
         
         dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
