@@ -70,10 +70,8 @@ static NSString *const ESEventRetryKey = @"retry";
         _timeoutInterval = timeoutInterval;
         _retryInterval = retryInterval;
         _authToken = authValue;
-        
-        dispatch_sync(dispatch_get_main_queue(), ^(void){
-            [self open];
-        });
+
+        [self open];
     }
     return self;
 }
@@ -115,9 +113,10 @@ static NSString *const ESEventRetryKey = @"retry";
     if (self.lastEventID) {
         [request setValue:self.lastEventID forHTTPHeaderField:@"Last-Event-ID"];
     }
-    
+
+    self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
+
     dispatch_async(dispatch_get_main_queue(), ^{
-        self.eventSource = [[NSURLConnection alloc] initWithRequest:request delegate:self startImmediately:NO];
         [self.eventSource start];
     });
 }
