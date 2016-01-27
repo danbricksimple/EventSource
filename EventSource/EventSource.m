@@ -71,8 +71,7 @@ static NSString *const ESEventRetryKey = @"retry";
         _retryInterval = retryInterval;
         _authToken = authValue;
         
-        dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(_retryInterval * NSEC_PER_SEC));
-        dispatch_after(popTime, dispatch_get_main_queue(), ^(void){
+        dispatch_sync(dispatch_get_main_queue(), ^(void){
             [self open];
         });
     }
