@@ -177,9 +177,11 @@ static NSString *const ESEventRetryKey = @"retry";
         dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
             eventString = [eventString stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
             NSMutableArray *components = [[eventString componentsSeparatedByString:ESEventKeyValuePairSeparator] mutableCopy];
-            
-            Event *e = [Event new];
-            e.readyState = kEventStateOpen;
+
+            //Multiple events might come through at once, make sure to queue them
+            NSMutableArray *events = [[NSMutableArray alloc] init];
+
+            Event *e = nil;
             
             for (NSString *component in components) {
                 if (component.length == 0) {
@@ -198,6 +200,9 @@ static NSString *const ESEventRetryKey = @"retry";
                     e.id = value;
                     self.lastEventID = e.id;
                 } else if ([key isEqualToString:ESEventEventKey]) {
+                    //New event, create and add to the array
+                    e = [Event new];
+                    [events addObject:e];
                     e.event = value;
                 } else if ([key isEqualToString:ESEventDataKey]) {
                     e.data = value;
@@ -208,17 +213,23 @@ static NSString *const ESEventRetryKey = @"retry";
             
             NSArray *messageHandlers = self.listeners[MessageEvent];
             for (EventSourceEventHandler handler in messageHandlers) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    handler(e);
-                });
+                for ( Event *ev in events )
+                {
+                    dispatch_async(dispatch_get_main_queue(), ^{
+                        handler(ev);
+                    });
+                }
             }
             
             if (e.event != nil) {
                 NSArray *namedEventhandlers = self.listeners[e.event];
                 for (EventSourceEventHandler handler in namedEventhandlers) {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        handler(e);
-                    });
+                    for ( Event *ev in events )
+                    {
+                        dispatch_async(dispatch_get_main_queue(), ^{
+                            handler(ev);
+                        });
+                    }
                 }
             }
         });
