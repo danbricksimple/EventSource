@@ -25,6 +25,7 @@ static NSString *const ESEventRetryKey = @"retry";
 
 @interface EventSource () <NSURLConnectionDelegate, NSURLConnectionDataDelegate> {
     BOOL wasClosed;
+    NSString *dataString;
 }
 
 @property (nonatomic, strong) NSURL *eventURL;
@@ -70,6 +71,8 @@ static NSString *const ESEventRetryKey = @"retry";
         _timeoutInterval = timeoutInterval;
         _retryInterval = retryInterval;
         _authToken = authValue;
+
+        dataString = @"";
 
         [self open];
     }
@@ -169,70 +172,103 @@ static NSString *const ESEventRetryKey = @"retry";
 
 - (void)connection:(NSURLConnection *)connection didReceiveData:(NSData *)data
 {
-    __block NSString *eventString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
-    
-    if ([eventString hasSuffix:ESEventSeparatorLFLF] ||
-        [eventString hasSuffix:ESEventSeparatorCRCR] ||
-        [eventString hasSuffix:ESEventSeparatorCRLFCRLF]) {
-        dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_BACKGROUND, 0), ^{
-            eventString = [eventString stringByTrimmingCharactersInSet:[NSCharacterSet newlineCharacterSet]];
-            NSMutableArray *components = [[eventString componentsSeparatedByString:ESEventKeyValuePairSeparator] mutableCopy];
+    NSString *incomingString = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];
+    [self parseEvent:incomingString];
+}
 
-            //Multiple events might come through at once, make sure to queue them
-            NSMutableArray *events = [[NSMutableArray alloc] init];
+-(void) parseEvent:(NSString*)incomingString
+{
+    dataString = [dataString stringByAppendingString:incomingString];
 
-            Event *e = nil;
-            
-            for (NSString *component in components) {
-                if (component.length == 0) {
-                    continue;
-                }
-                
-                NSInteger index = [component rangeOfString:ESKeyValueDelimiter].location;
-                if (index == NSNotFound || index == (component.length - 2)) {
-                    continue;
-                }
-                
-                NSString *key = [component substringToIndex:index];
-                NSString *value = [component substringFromIndex:index + ESKeyValueDelimiter.length];
-                
-                if ([key isEqualToString:ESEventIDKey]) {
-                    e.id = value;
-                    self.lastEventID = e.id;
-                } else if ([key isEqualToString:ESEventEventKey]) {
-                    //New event, create and add to the array
-                    e = [Event new];
-                    [events addObject:e];
-                    e.event = value;
-                } else if ([key isEqualToString:ESEventDataKey]) {
-                    e.data = value;
-                } else if ([key isEqualToString:ESEventRetryKey]) {
-                    self.retryInterval = [value doubleValue];
-                }
+    //dataString might contain multiple events, separate by the ending delimiter
+    NSArray *eventStrings = [dataString componentsSeparatedByString:@"\n\n"];
+
+    //If the eventStrings is only 1 component long we do not have a complete event
+    if ( eventStrings.count <= 1 )
+    {
+        return;
+    }
+
+    NSMutableArray *events = [[NSMutableArray alloc] init];
+
+    //Ignore the last event, it is either an empty string or an incomplete event
+    for ( int i = 0; i < eventStrings.count-1; ++i )
+    {
+        NSString *eventString = eventStrings[i];
+        NSArray *eventComponents = [eventString componentsSeparatedByString:ESEventKeyValuePairSeparator];
+        Event *e = [Event new];
+
+        for (NSString *component in eventComponents)
+        {
+            if (component.length == 0)
+            {
+                continue;
             }
-            
-            NSArray *messageHandlers = self.listeners[MessageEvent];
-            for (EventSourceEventHandler handler in messageHandlers) {
-                for ( Event *ev in events )
-                {
-                    dispatch_async(dispatch_get_main_queue(), ^{
-                        handler(ev);
-                    });
-                }
+
+            NSInteger index = [component rangeOfString:ESKeyValueDelimiter].location;
+            if (index == NSNotFound || index == (component.length - 2)) {
+                continue;
             }
-            
-            if (e.event != nil) {
-                NSArray *namedEventhandlers = self.listeners[e.event];
-                for (EventSourceEventHandler handler in namedEventhandlers) {
-                    for ( Event *ev in events )
-                    {
-                        dispatch_async(dispatch_get_main_queue(), ^{
-                            handler(ev);
-                        });
-                    }
-                }
+
+            NSString *key = [component substringToIndex:index];
+            NSString *value = [component substringFromIndex:index + ESKeyValueDelimiter.length];
+
+            if ([key isEqualToString:ESEventIDKey])
+            {
+                e.id = value;
+                self.lastEventID = e.id;
             }
-        });
+            else if ([key isEqualToString:ESEventEventKey])
+            {
+                e.event = value;
+            }
+
+            else if ([key isEqualToString:ESEventDataKey])
+            {
+                e.data = value;
+            }
+            else if ([key isEqualToString:ESEventRetryKey])
+            {
+                self.retryInterval = [value doubleValue];
+            }
+        }
+
+        if ( e.event != nil )
+        {
+            [events addObject:e];
+        }
+    }
+
+    //Clear out the saved strings
+    dataString = @"";
+
+    //If there is an incomplete event at the end, save it
+    NSString *lastString = [eventStrings lastObject];
+    if ( lastString.length > 0 )
+    {
+        dataString = lastString;
+    }
+
+    for ( Event *e in events )
+    {
+        NSArray *messageHandlers = self.listeners[MessageEvent];
+        for (EventSourceEventHandler handler in messageHandlers)
+        {
+            dispatch_async(dispatch_get_main_queue(), ^{
+                handler(e);
+            });
+        }
+
+        if (e.event != nil)
+        {
+            NSArray *namedEventhandlers = self.listeners[e.event];
+            for (EventSourceEventHandler handler in namedEventhandlers)
+            {
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    handler(e);
+                });
+            }
+        }
     }
 }
 
