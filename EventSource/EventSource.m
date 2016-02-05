@@ -197,6 +197,7 @@ static NSString *const ESEventRetryKey = @"retry";
         NSString *eventString = eventStrings[i];
         NSArray *eventComponents = [eventString componentsSeparatedByString:ESEventKeyValuePairSeparator];
         Event *e = [Event new];
+        e.readyState = kEventStateOpen;
 
         for (NSString *component in eventComponents)
         {
@@ -222,7 +223,6 @@ static NSString *const ESEventRetryKey = @"retry";
             {
                 e.event = value;
             }
-
             else if ([key isEqualToString:ESEventDataKey])
             {
                 e.data = value;
